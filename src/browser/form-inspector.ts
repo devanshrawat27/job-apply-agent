@@ -13,7 +13,7 @@ export async function inspectApplicationForm(url: string): Promise<{ fields: Det
   try {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "domcontentloaded" });
-    return inspectPage(page, url);
+    return await inspectPage(page, url);
   } finally {
     await browser.close();
   }

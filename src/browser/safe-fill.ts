@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { FieldRecordSchema } from "@/validation/schemas";
+import { detectAdapter, fieldNameHints } from "@/browser/adapters";
 
 /** Fills only low-risk, profile-verified text/select values. It cannot upload or submit. */
 export async function fillVerifiedFields(url: string, proposedFields: unknown[]) {
@@ -11,8 +12,13 @@ export async function fillVerifiedFields(url: string, proposedFields: unknown[])
     await page.goto(url, { waitUntil: "domcontentloaded" });
     const filled: string[] = [];
     const verified: Array<{ label: string; value: string }> = [];
+    const adapter = detectAdapter(url);
     for (const field of eligible) {
-      const locator = page.getByLabel(field.field_label, { exact: false });
+      const labelLocator = page.getByLabel(field.field_label, { exact: false });
+      const hints = fieldNameHints(adapter.id, field.field_label);
+      const hintLocator = hints.length ? page.locator(hints.map((hint) => `[name*="${hint}" i], [id*="${hint}" i]`).join(", ")) : page.locator("__missing_field_hint__");
+      const labelCount = await labelLocator.count();
+      const locator = labelCount === 1 ? labelLocator : hintLocator;
       const count = await locator.count();
       if (count !== 1) continue;
       const tag = await locator.evaluate((element) => element.tagName.toLowerCase());
