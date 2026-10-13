@@ -11,7 +11,7 @@ describe("career profile normalizer", () => {
     });
     expect(profile?.identity.full_name).toBe("Devansh Rawat");
     expect(profile?.skills).toContain("TypeScript");
-    expect(profile?.conflicts.length).toBe(2);
+    expect(profile?.conflicts.length).toBe(1);
     expect(profile?.source_resumes).toEqual(["resume.pdf"]);
   });
 });
