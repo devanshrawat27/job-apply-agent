@@ -7,6 +7,7 @@ type Job = { id: string; company: string | null; role: string | null; location: 
 type Resume = { applicationId: string; fileName: string; contentHash: string; version: string; changeSummary: string[] };
 type Field = { field_label: string; field_type: string; available_options: string[]; proposed_value: string | null; status: string; reason: string; risk?: string };
 type TrackerStatus = "resume_draft" | "resume_approved" | "form_in_progress" | "needs_user_input" | "ready_for_review" | "confirmation_unverified" | "blocked";
+type AIStatus = { configured: boolean; available: boolean; model: string; message: string };
 const HANDOFF_PROMPT = `Using all career-related context available in this Project and its uploaded files, create my Personal Career Master Profile Pack for job applications. Do not invent or infer facts as if they were verified. Consolidate my personal/contact details, education, expected graduation, CGPA, experience/internships, dates, responsibilities, skills, projects, achievements, certifications, links, job preferences, previously used application answers, and resume-writing preferences. Preserve exact names, dates, metrics, and URLs when available. If facts conflict, show each conflicting value with its source/context and mark it NEEDS_MY_CONFIRMATION; do not silently pick one. Mark missing facts UNKNOWN. Separate verified facts from preferences and suggested wording. Create two outputs: (1) MASTER_PROFILE.md, readable and comprehensive; (2) master-profile.json, structured and valid JSON. Also provide a short checklist of conflicts/questions I should resolve and list the source files/resumes that should be preserved unchanged. Tailor nothing to a particular job yet. The goal is a reusable, truthful source of career facts for my personal job-application agent.`;
 
 async function api<T>(url: string, body?: unknown): Promise<T> {
@@ -18,6 +19,7 @@ async function api<T>(url: string, body?: unknown): Promise<T> {
 
 export default function Home() {
   const [profile, setProfile] = useState<ProfileStatus | null>(null);
+  const [aiStatus, setAiStatus] = useState<AIStatus | null>(null);
   const [profileJson, setProfileJson] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [description, setDescription] = useState("");
@@ -38,7 +40,7 @@ export default function Home() {
   const [working, setWorking] = useState(false);
 
   const refreshProfile = () => api<ProfileStatus>("/api/profile/status").then(setProfile).catch((error) => setMessage(error.message));
-  useEffect(() => { refreshProfile(); }, []);
+  useEffect(() => { refreshProfile(); api<AIStatus>("/api/ai/status").then(setAiStatus).catch(() => setAiStatus(null)); }, []);
 
   async function analyze() {
     setWorking(true); setMessage(""); setResume(null); setResumeApproved(false); setFinalApproved(false); setPreviewUrl(null); setFields([]);
@@ -115,6 +117,7 @@ export default function Home() {
       <div className="card"><h2>2. Analyze a job</h2><label htmlFor="url">Job URL</label><input id="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://careers.example.com/jobs/..." /><label htmlFor="description">Job description</label><textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Paste the complete job description here..." /><div className="actions"><button className="primary" disabled={working || (!sourceUrl && !description)} onClick={analyze}>{working ? "Working…" : "Analyze job"}</button></div></div>
       {job && <div className="card"><h2>3. Job evidence review</h2><p><strong>{job.role ?? "Role not identified"}</strong>{job.company ? ` at ${job.company}` : ""}{job.location ? ` · ${job.location}` : ""}</p><table className="table"><thead><tr><th>Requirement</th><th>Evidence</th></tr></thead><tbody>{job.evidence.map((item) => <tr key={item.requirement}><td>{item.requirement}</td><td>{item.evidence.length ? item.evidence.join("; ") : <span className="small">Unknown - will not be claimed.</span>}</td></tr>)}</tbody></table><div className="actions"><button className="primary" disabled={working || !profile?.ready} onClick={generate}>Generate PDF draft</button></div></div>}
     </section><aside>
+      <div className="card"><h2>AI provider</h2>{aiStatus?.available ? <div className="notice success">Free local Ollama model ready: {aiStatus.model}.</div> : <div className="notice warning">{aiStatus?.message ?? "Checking local AI provider…"}</div>}<p className="small">OpenAI is optional. The deterministic workflow works without any API key.</p></div>
       <div className="card"><h2>Safety gates</h2><ol className="list"><li>Validated local profile.</li><li>Exact PDF preview and resume approval.</li><li>Form inspection and field review.</li><li>Verified safe fill with audit trail.</li><li>Separate final application approval.</li><li>Submit click requires explicit environment opt-in.</li></ol><p className="small">Upload is approval-gated. Submit is disabled by default.</p></div>
       {resume && <>
         <div className="card"><h2>Application tracker</h2><p className="small">Track this application locally; this does not upload or submit anything.</p><p><a className="secondary" href={`/applications/${resume.applicationId}`}>Open tracker dashboard</a></p><label htmlFor="tracker-status">Status</label><select id="tracker-status" value={trackerStatus} onChange={(event) => setTrackerStatus(event.target.value as TrackerStatus)}><option value="resume_draft">Resume draft</option><option value="resume_approved">Resume approved</option><option value="form_in_progress">Form in progress</option><option value="needs_user_input">Needs user input</option><option value="ready_for_review">Ready for review</option><option value="confirmation_unverified">Confirmation unverified</option><option value="blocked">Blocked</option></select><label htmlFor="next-action">Next action</label><input id="next-action" value={nextAction} onChange={(event) => setNextAction(event.target.value)} placeholder="What should happen next?" /><div className="actions"><button className="secondary" disabled={working || !nextAction.trim()} onClick={updateTracker}>Update tracker</button></div></div>

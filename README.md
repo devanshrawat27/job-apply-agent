@@ -16,7 +16,7 @@ The current UI implements Phase 0 and the first usable profile-to-PDF/form revie
 ## Start locally
 
 1. Install Node.js 20 LTS or newer.
-2. In `D:\jobsapply`, copy `.env.example` to `.env.local`. Leave OpenAI values blank unless you want a future OpenAI-powered enhancement; the current deterministic MVP does not require an API key.
+2. In `D:\jobsapply`, copy `.env.example` to `.env.local`. OpenAI values may remain blank. For free local AI, install Ollama and run `ollama pull llama3.2`; the app detects it automatically.
 3. Install dependencies with `npm install`.
 4. Install the browser runtime once: `npx playwright install chromium`.
 5. Create the local SQLite database/client when you begin tracker work: `npm run db:generate` then `npm run db:push`.
