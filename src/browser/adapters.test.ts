@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectAdapter } from "./adapters";
+import { detectAdapter, fieldNameHints } from "./adapters";
 
 describe("ATS adapter detection", () => {
   it("recognizes supported Greenhouse and Lever hosts", () => {
@@ -9,5 +9,10 @@ describe("ATS adapter detection", () => {
   it("does not claim Workday or unknown forms are supported", () => {
     expect(detectAdapter("https://example.myworkdayjobs.com/en-US/apply").supported).toBe(false);
     expect(detectAdapter("https://example.test/apply").id).toBe("generic");
+  });
+  it("provides conservative name/id hints for common identity fields", () => {
+    expect(fieldNameHints("greenhouse", "First name")).toContain("first");
+    expect(fieldNameHints("lever", "Email")).toContain("email");
+    expect(fieldNameHints("lever", "Name")).toEqual(["name"]);
   });
 });

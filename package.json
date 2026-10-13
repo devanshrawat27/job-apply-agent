@@ -10,7 +10,7 @@
     "test": "vitest run",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:setup": "npm run db:generate && npm run db:push"
+    "db:setup": "npm run db:generate && node scripts/init-db.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

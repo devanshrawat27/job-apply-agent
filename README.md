@@ -22,7 +22,7 @@ The current UI implements Phase 0 and the first usable profile-to-PDF/form revie
 5. Create the local SQLite database/client when you begin tracker work: `npm run db:generate` then `npm run db:push`.
 6. Start the local UI: `npm run dev`, then open the localhost URL shown in the terminal.
 
-On Windows, double-click `start-agent.bat` for the same setup/start flow. To initialize the optional local Prisma tracker database, run `npm run db:setup` once.
+On Windows, double-click `start-agent.bat` for the same setup/start flow. To initialize the optional local Prisma tracker database, run `npm run db:setup` once. The setup uses the generated Prisma client directly because some Windows environments cannot run Prisma's schema engine during `db push`.
 
 To create a clean source bundle without personal profile/application data, run `powershell -ExecutionPolicy Bypass -File .\package-release.ps1`. The generated ZIP intentionally excludes `data/`, `playwright-profile/`, `.env.local`, and `node_modules/`.
 
