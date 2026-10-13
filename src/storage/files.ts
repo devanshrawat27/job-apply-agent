@@ -81,6 +81,12 @@ export async function loadApplicationReview(applicationId: string) {
   return ApplicationReviewSchema.parse(JSON.parse(raw));
 }
 
+export async function updateApplicationReview(applicationId: string, fields: ApplicationReview["fields"], coverLetter = "") {
+  const current = await loadApplicationReview(applicationId);
+  const nextHash = hash(JSON.stringify({ applicationId, resumeHash: current.resumeHash, fields, coverLetter }));
+  return saveApplicationReview({ ...current, fields, coverLetter, reviewHash: nextHash, createdAt: new Date().toISOString() });
+}
+
 export async function approveFinalApplication(applicationId: string, reviewHash: string) {
   const review = await loadApplicationReview(applicationId);
   if (review.reviewHash !== reviewHash) throw new Error("The application review changed. Review the current version again.");

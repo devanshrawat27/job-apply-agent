@@ -104,4 +104,10 @@ export const ApplicationReviewSchema = z.object({
   createdAt: z.string(),
 });
 
+export const ReviewUpdateSchema = z.object({
+  applicationId: z.string().min(1),
+  fields: z.array(FieldRecordSchema),
+  coverLetter: z.string().default(""),
+});
+
 export type ApplicationReview = z.infer<typeof ApplicationReviewSchema>;
