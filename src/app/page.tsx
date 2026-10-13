@@ -20,6 +20,7 @@ async function api<T>(url: string, body?: unknown): Promise<T> {
 export default function Home() {
   const [profile, setProfile] = useState<ProfileStatus | null>(null);
   const [aiStatus, setAiStatus] = useState<AIStatus | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<string | null>(null);
   const [profileJson, setProfileJson] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [description, setDescription] = useState("");
@@ -43,7 +44,7 @@ export default function Home() {
   useEffect(() => { refreshProfile(); api<AIStatus>("/api/ai/status").then(setAiStatus).catch(() => setAiStatus(null)); }, []);
 
   async function analyze() {
-    setWorking(true); setMessage(""); setResume(null); setResumeApproved(false); setFinalApproved(false); setPreviewUrl(null); setFields([]);
+    setWorking(true); setMessage(""); setAiSuggestions(null); setResume(null); setResumeApproved(false); setFinalApproved(false); setPreviewUrl(null); setFields([]);
     try { const result = await api<{ job: Job; warning: string | null }>("/api/jobs/analyze", { sourceUrl, description }); setJob(result.job); setMessage(result.warning ?? "Job analyzed locally."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Analysis failed."); } finally { setWorking(false); }
   }
@@ -56,6 +57,11 @@ export default function Home() {
     if (!job) return; setWorking(true); setMessage("");
     try { const result = await api<{ record: Resume; previewUrl: string }>("/api/resumes/generate", job); setResume(result.record); setPreviewUrl(result.previewUrl); setMessage("PDF draft generated. Review the exact preview."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Resume generation failed."); } finally { setWorking(false); }
+  }
+  async function generateAISuggestions() {
+    if (!job) return; setWorking(true); setMessage("");
+    try { const result = await api<{ suggestions: string; message: string }>("/api/ai/tailor", job); setAiSuggestions(result.suggestions); setMessage(result.message); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Local AI suggestions unavailable."); } finally { setWorking(false); }
   }
   async function approveResume() {
     if (!resume) return; setWorking(true); setMessage("");
@@ -115,7 +121,7 @@ export default function Home() {
     <div className="grid"><section>
       <div className="card"><h2>1. Profile Pack status</h2>{profile?.ready ? <div className="notice success"><strong>{profile.summary?.name}</strong> - verified {profile.summary?.lastVerified}. {profile.summary?.conflicts.length ? `Blocked by ${profile.summary.conflicts.length} unresolved conflict(s).` : "Ready for evidence-backed drafting."}</div> : <div className="notice warning">Profile Pack not installed. Job analysis works, but resume drafting stays blocked.</div>}<div className="actions"><button className="secondary" onClick={refreshProfile}>Recheck local profile</button></div><details><summary>One-time Resume Project handoff prompt</summary><p className="small">Paste this exact prompt into your existing ChatGPT Resume Project, then save the generated JSON locally. This app never scrapes that Project.</p><pre className="small">{HANDOFF_PROMPT}</pre></details><details><summary>Import or replace local Profile Pack</summary><p className="small">Paste the JSON exported from your approved profile handoff. It is saved only to this project’s local data folder.</p><input type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) file.text().then(setProfileJson); }} /><textarea value={profileJson} onChange={(event) => setProfileJson(event.target.value)} placeholder='{"schema_version":"1.0", ...}' /><div className="actions"><button className="secondary" disabled={working || !profileJson.trim()} onClick={importProfile}>Validate and save profile</button><a className="secondary" href="/profile-template.json" target="_blank" rel="noreferrer">Open template</a></div></details></div>
       <div className="card"><h2>2. Analyze a job</h2><label htmlFor="url">Job URL</label><input id="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://careers.example.com/jobs/..." /><label htmlFor="description">Job description</label><textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Paste the complete job description here..." /><div className="actions"><button className="primary" disabled={working || (!sourceUrl && !description)} onClick={analyze}>{working ? "Working…" : "Analyze job"}</button></div></div>
-      {job && <div className="card"><h2>3. Job evidence review</h2><p><strong>{job.role ?? "Role not identified"}</strong>{job.company ? ` at ${job.company}` : ""}{job.location ? ` · ${job.location}` : ""}</p><table className="table"><thead><tr><th>Requirement</th><th>Evidence</th></tr></thead><tbody>{job.evidence.map((item) => <tr key={item.requirement}><td>{item.requirement}</td><td>{item.evidence.length ? item.evidence.join("; ") : <span className="small">Unknown - will not be claimed.</span>}</td></tr>)}</tbody></table><div className="actions"><button className="primary" disabled={working || !profile?.ready} onClick={generate}>Generate PDF draft</button></div></div>}
+      {job && <div className="card"><h2>3. Job evidence review</h2><p><strong>{job.role ?? "Role not identified"}</strong>{job.company ? ` at ${job.company}` : ""}{job.location ? ` · ${job.location}` : ""}</p><table className="table"><thead><tr><th>Requirement</th><th>Evidence</th></tr></thead><tbody>{job.evidence.map((item) => <tr key={item.requirement}><td>{item.requirement}</td><td>{item.evidence.length ? item.evidence.join("; ") : <span className="small">Unknown - will not be claimed.</span>}</td></tr>)}</tbody></table><div className="actions"><button className="secondary" disabled={working || !aiStatus?.available} onClick={generateAISuggestions}>Generate local AI suggestions</button><button className="primary" disabled={working || !profile?.ready} onClick={generate}>Generate PDF draft</button></div>{aiSuggestions && <><h3>Local AI suggestions — review manually</h3><pre className="small">{aiSuggestions}</pre><p className="small">Suggestions never modify the PDF automatically.</p></>}</div>}
     </section><aside>
       <div className="card"><h2>AI provider</h2>{aiStatus?.available ? <div className="notice success">Free local Ollama model ready: {aiStatus.model}.</div> : <div className="notice warning">{aiStatus?.message ?? "Checking local AI provider…"}</div>}<p className="small">OpenAI is optional. The deterministic workflow works without any API key.</p></div>
       <div className="card"><h2>Safety gates</h2><ol className="list"><li>Validated local profile.</li><li>Exact PDF preview and resume approval.</li><li>Form inspection and field review.</li><li>Verified safe fill with audit trail.</li><li>Separate final application approval.</li><li>Submit click requires explicit environment opt-in.</li></ol><p className="small">Upload is approval-gated. Submit is disabled by default.</p></div>
