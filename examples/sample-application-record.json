@@ -1,0 +1,10 @@
+{
+  "company": "Example Company",
+  "jobTitle": "Example Role",
+  "url": "https://careers.example.test/jobs/123",
+  "location": "UNKNOWN",
+  "stage": "analyzed",
+  "resume": null,
+  "submissionEvidence": null,
+  "nextAction": "Install and verify a local Profile Pack before drafting a resume."
+}

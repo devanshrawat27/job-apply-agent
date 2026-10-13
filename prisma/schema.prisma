@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id           String      @id
+  company      String?
+  role         String?
+  sourceUrl    String?
+  status       String
+  reviewHash   String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  approvals    Approval[]
+  auditEvents  AuditEvent[]
+}
+
+model Approval {
+  id            String      @id @default(cuid())
+  applicationId String
+  kind          String
+  contentHash   String
+  approvedAt    DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, kind, contentHash])
+}
+
+model AuditEvent {
+  id            String      @id @default(cuid())
+  applicationId String
+  action        String
+  details       String
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
