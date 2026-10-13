@@ -95,6 +95,28 @@ export async function appendAuditEvent(applicationId: string, action: string, de
   await writeFile(auditPath, line, { encoding: "utf8", flag: "a" });
 }
 
+export async function updateApplicationStatus(applicationId: string, status: string, nextAction: string) {
+  const directory = path.join(applicationRoot, applicationId);
+  await mkdir(directory, { recursive: true });
+  const currentPath = path.join(directory, "status.json");
+  let current: Record<string, unknown> = {};
+  if (await fileExists(currentPath)) current = JSON.parse(await readFile(currentPath, "utf8"));
+  const next = { ...current, status, nextAction, updatedAt: new Date().toISOString() };
+  await writeFile(currentPath, JSON.stringify(next, null, 2), "utf8");
+  await appendAuditEvent(applicationId, "status_updated", { status, nextAction });
+  return next;
+}
+
+export async function recordConfirmation(applicationId: string, confirmation: { confirmationUrl?: string; evidenceText: string; referenceNumber?: string }) {
+  const directory = path.join(applicationRoot, applicationId);
+  await mkdir(directory, { recursive: true });
+  const record = { ...confirmation, verifiedAt: new Date().toISOString(), status: "confirmed" };
+  await writeFile(path.join(directory, "confirmation.json"), JSON.stringify(record, null, 2), "utf8");
+  await updateApplicationStatus(applicationId, "confirmed", "No further action recorded.");
+  await appendAuditEvent(applicationId, "confirmation_recorded", { hasUrl: Boolean(confirmation.confirmationUrl), hasReferenceNumber: Boolean(confirmation.referenceNumber) });
+  return record;
+}
+
 export async function approveFinalApplication(applicationId: string, reviewHash: string) {
   const review = await loadApplicationReview(applicationId);
   if (review.reviewHash !== reviewHash) throw new Error("The application review changed. Review the current version again.");

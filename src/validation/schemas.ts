@@ -110,4 +110,8 @@ export const ReviewUpdateSchema = z.object({
   coverLetter: z.string().default(""),
 });
 
+export const ApplicationStatusSchema = z.enum(["discovered", "analyzed", "resume_draft", "resume_approved", "form_in_progress", "needs_user_input", "ready_for_review", "ready_for_submission", "submitted", "confirmation_unverified", "confirmed", "blocked", "rejected"]);
+export const StatusUpdateSchema = z.object({ applicationId: z.string().min(1), status: ApplicationStatusSchema, nextAction: z.string().min(1) });
+export const ConfirmationSchema = z.object({ applicationId: z.string().min(1), confirmationUrl: z.string().url().optional().or(z.literal("")), evidenceText: z.string().trim().min(3), referenceNumber: z.string().optional().or(z.literal("")) });
+
 export type ApplicationReview = z.infer<typeof ApplicationReviewSchema>;
