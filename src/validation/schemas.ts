@@ -64,6 +64,7 @@ export const ResumeRecordSchema = z.object({
   applicationId: z.string(),
   fileName: z.string(),
   htmlPath: z.string(),
+  texPath: z.string().optional(),
   pdfPath: z.string(),
   contentHash: z.string(),
   version: z.string(),
