@@ -22,6 +22,8 @@ The current UI implements Phase 0 and the first usable profile-to-PDF/form revie
 5. Create the local SQLite database/client when you begin tracker work: `npm run db:generate` then `npm run db:push`.
 6. Start the local UI: `npm run dev`, then open the localhost URL shown in the terminal.
 
+On Windows, double-click `start-agent.bat` for the same setup/start flow. To initialize the optional local Prisma tracker database, run `npm run db:setup` once.
+
 Run `npm test`, `npm run lint`, and `npx tsc --noEmit` before changes are considered verified.
 
 ## One-time Profile Pack handoff
