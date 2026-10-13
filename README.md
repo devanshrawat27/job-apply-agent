@@ -56,6 +56,8 @@ Personal artifacts are intentionally ignored by Git:
 
 `examples/sample-application-record.json` is synthetic and illustrates the desired tracker shape.
 
+After a job is analyzed, open `/applications/<application-id>` on the local server for the tracker dashboard. It shows the recorded status, resume hash, form decisions, audit history, and any manually supplied confirmation evidence.
+
 ## Supported browser/site behavior today
 
 The Playwright implementation can inspect visible text, textarea, and select controls on an authorized application URL and save structured field candidates. The guarded filler accepts only explicitly classified low-risk `verified_autofill` values and refuses resume/files, authorization, sponsorship, compensation, demographic, criminal-history, and similar sensitive fields. It does not bypass login, MFA, OTP, CAPTCHA, anti-bot controls, or site restrictions.
