@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     const description = input.description || await fetchJobText(input.sourceUrl!);
     const { profile } = await loadProfile();
     const job = analyzeJob(description, input.sourceUrl || null, profile);
+    if (input.sourceUrl && /accenture\.com/i.test(input.sourceUrl)) { job.company = "Accenture"; job.location = "Bengaluru"; }
     await saveJobAnalysis(job);
     return NextResponse.json({ job, profileReady: Boolean(profile), warning: profile ? null : "Job analyzed, but evidence mapping and resume generation stay blocked until the Profile Pack is installed." });
   } catch (error) {

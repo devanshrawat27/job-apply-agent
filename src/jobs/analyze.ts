@@ -1,7 +1,9 @@
 import { applicationId } from "@/storage/files";
 import type { JobAnalysis, MasterProfile } from "@/validation/schemas";
 
-const lines = (value: string) => value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+const lines = (value: string) => value
+  .replace(/\b(Project Role Description|Must have skills|Good to have skills|Minimum [^:]{1,50}experience is required|Educational Qualification|Locations|Summary|Roles & Responsibilities|Professional & Technical Skills|Additional Information)\s*:/gi, "\n$1:")
+  .split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 const clean = (value: string) => value.replace(/^[-*•\d.)\s]+/, "").trim();
 
 function capture(text: string, patterns: RegExp[]) {
@@ -18,12 +20,14 @@ function evidenceCorpus(profile: MasterProfile) {
 }
 
 export function analyzeJob(description: string, sourceUrl: string | null, profile: MasterProfile | null): JobAnalysis {
-  const role = capture(description, [/(?:job title|position|role)\s*[:|-]\s*([^\n]+)/i, /^(.+(?:engineer|developer|designer|analyst|intern|manager))$/im]);
-  const company = capture(description, [/(?:company|organization|employer)\s*[:|-]\s*([^\n]+)/i, /(?:at|join)\s+([A-Z][\w.& -]{2,})/]);
-  const location = capture(description, [/(?:location|based in)\s*[:|-]\s*([^\n]+)/i]);
-  const employmentType = capture(description, [/(?:employment type|job type|type)\s*[:|-]\s*([^\n]+)/i]);
-  const candidates = lines(description).filter((line) => /^(?:[-*•]|\d+[.)])/.test(line) || /(?:requirements|qualifications|what you(?:'|’)ll need)/i.test(line));
-  const requirements = Array.from(new Set(candidates.map(clean).filter((line) => line.length > 10 && !/^requirements:?$/i.test(line)))).slice(0, 10);
+  const normalized = lines(description).join("\n");
+  const role = capture(normalized, [/(?:project role|job title|position|role)\s*[:|-]\s*([^\n]+)/i, /^(.+(?:engineer|developer|designer|analyst|intern|manager))$/im]);
+  const company = /accenture\.com/i.test(sourceUrl ?? "") ? "Accenture" : capture(normalized, [/(?:company|organization|employer)\s*[:|-]\s*([^\n]+)/i, /(?:at|join)\s+([A-Z][\w.& -]{2,})/]);
+  const location = capture(normalized, [/(?:location|locations|based in)\s*[:|-]\s*([^\n]+)/i, /locations\s+([A-Z][\w -]{2,})/i]);
+  const employmentType = capture(normalized, [/(?:employment type|job type|type)\s*[:|-]\s*([^\n]+)/i]);
+  const candidates = lines(normalized).filter((line) => /^(?:[-*•]|\d+[.)])/.test(line) || /(?:requirements|qualifications|what you(?:'|’)ll need)/i.test(line));
+  const sections = Array.from(normalized.matchAll(/(?:must have skills|good to have skills|minimum [^:]{1,50}experience is required|educational qualification|locations)\s*:?\s*(.*?)(?=\s+(?:good to have skills|minimum [^:]{1,50}experience is required|educational qualification|summary|locations|additional information)\s*:?|$)/gi)).map((match) => match[0].trim());
+  const requirements = Array.from(new Set([...sections, ...candidates.map(clean)].filter((line) => line.length > 10 && line.length < 240 && !/^requirements:?$/i.test(line)))).slice(0, 10);
   const corpus = profile ? evidenceCorpus(profile).join("\n") : "";
   const evidence = requirements.map((requirement) => {
     const keywords = requirement.toLowerCase().match(/[a-z][a-z+#.]{2,}/g) ?? [];

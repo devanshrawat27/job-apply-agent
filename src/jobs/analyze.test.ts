@@ -17,4 +17,12 @@ describe("analyzeJob", () => {
     expect(job.evidence[0]).toMatchObject({ status: "supported" });
     expect(job.evidence[1]).toMatchObject({ status: "unknown", evidence: [] });
   });
+
+  it("turns inline Accenture headings into short reviewable requirements", () => {
+    const job = analyzeJob("Project Role : Custom Software Engineer Project Role Description : Build software. Must have skills : Aveva OSIsoft PI Good to have skills : NA Minimum 0-2 year(s) of experience is required Educational Qualification : 15 years full time education Locations Bengaluru", "https://www.accenture.com/in-en/careers/jobdetails?id=demo", profile);
+    expect(job.company).toBe("Accenture");
+    expect(job.role).toBe("Custom Software Engineer");
+    expect(job.requirements.some((item) => item.includes("Aveva OSIsoft PI"))).toBe(true);
+    expect(job.requirements.every((item) => item.length < 240)).toBe(true);
+  });
 });
