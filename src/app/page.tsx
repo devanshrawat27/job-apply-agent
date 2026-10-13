@@ -6,6 +6,7 @@ type ProfileStatus = { ready: boolean; errors: string[]; summary: { name: string
 type Job = { id: string; company: string | null; role: string | null; location: string | null; evidence: { requirement: string; evidence: string[] }[] };
 type Resume = { applicationId: string; fileName: string; contentHash: string; version: string; changeSummary: string[] };
 type Field = { field_label: string; field_type: string; available_options: string[]; proposed_value: string | null; status: string; reason: string; risk?: string };
+type TrackerStatus = "resume_draft" | "resume_approved" | "form_in_progress" | "needs_user_input" | "ready_for_review" | "confirmation_unverified" | "blocked";
 
 async function api<T>(url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : undefined);
@@ -24,6 +25,8 @@ export default function Home() {
   const [formUrl, setFormUrl] = useState("");
   const [fields, setFields] = useState<Field[]>([]);
   const [reviewHash, setReviewHash] = useState<string | null>(null);
+  const [trackerStatus, setTrackerStatus] = useState<TrackerStatus>("resume_draft");
+  const [nextAction, setNextAction] = useState("Review the generated resume PDF.");
   const [message, setMessage] = useState("");
   const [working, setWorking] = useState(false);
 
@@ -65,6 +68,11 @@ export default function Home() {
     try { const result = await api<{ message: string }>("/api/applications/approve", { applicationId: resume.applicationId, reviewHash, approval: "APPROVE_SUBMISSION" }); setMessage(result.message); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Final approval failed."); } finally { setWorking(false); }
   }
+  async function updateTracker() {
+    if (!resume) return; setWorking(true); setMessage("");
+    try { const result = await api<{ message: string }>("/api/applications/status", { applicationId: resume.applicationId, status: trackerStatus, nextAction }); setMessage(result.message); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Tracker update failed."); } finally { setWorking(false); }
+  }
 
   function updateField(index: number, patch: Partial<Field>) { setFields((current) => current.map((field, fieldIndex) => fieldIndex === index ? { ...field, ...patch } : field)); setReviewHash(null); }
   const unresolved = fields.filter((field) => ["needs_user_input", "proposed_for_review", "blocked"].includes(field.status)).length;
@@ -82,6 +90,7 @@ export default function Home() {
     </section><aside>
       <div className="card"><h2>Safety gates</h2><ol className="list"><li>Validated local profile.</li><li>Exact PDF preview and resume approval.</li><li>Form inspection and field review.</li><li>Verified safe fill with audit trail.</li><li>Separate final application approval.</li></ol><p className="small">Upload and Submit remain disabled.</p></div>
       {resume && <>
+        <div className="card"><h2>Application tracker</h2><p className="small">Track this application locally; this does not upload or submit anything.</p><p><a className="secondary" href={`/applications/${resume.applicationId}`}>Open tracker dashboard</a></p><label htmlFor="tracker-status">Status</label><select id="tracker-status" value={trackerStatus} onChange={(event) => setTrackerStatus(event.target.value as TrackerStatus)}><option value="resume_draft">Resume draft</option><option value="resume_approved">Resume approved</option><option value="form_in_progress">Form in progress</option><option value="needs_user_input">Needs user input</option><option value="ready_for_review">Ready for review</option><option value="confirmation_unverified">Confirmation unverified</option><option value="blocked">Blocked</option></select><label htmlFor="next-action">Next action</label><input id="next-action" value={nextAction} onChange={(event) => setNextAction(event.target.value)} placeholder="What should happen next?" /><div className="actions"><button className="secondary" disabled={working || !nextAction.trim()} onClick={updateTracker}>Update tracker</button></div></div>
         <div className="card"><h2>4. Resume approval</h2><p className="small"><strong>{resume.fileName}</strong></p><p className="mono">Version {resume.version}<br />SHA-256 {resume.contentHash}</p><ul className="list">{resume.changeSummary.map((change) => <li key={change}>{change}</li>)}</ul>{previewUrl && <><iframe title="Resume PDF preview" src={previewUrl} /><div className="actions"><a className="secondary" href={previewUrl} target="_blank" rel="noreferrer">Open PDF</a><button className="primary" disabled={working} onClick={approveResume}>Approve this resume</button></div></>}<p className="small">Version-specific approval only. It never authorizes submission.</p></div>
         <div className="card"><h2>5. Application form review</h2><p className="small">Login, MFA, OTP, CAPTCHA, and sensitive questions require manual handling.</p><label htmlFor="form-url">Application form URL</label><input id="form-url" value={formUrl} onChange={(event) => setFormUrl(event.target.value)} placeholder="https://careers.example.com/apply/..." /><div className="actions"><button className="secondary" disabled={working || !formUrl} onClick={inspectForm}>Inspect visible fields</button></div>{fields.length > 0 && <><p className="small">Verified safe fields ready: {safeFields}. Unresolved fields: {unresolved}.</p><table className="table"><thead><tr><th>Field</th><th>Decision</th></tr></thead><tbody>{fields.map((field, index) => <tr key={`${field.field_label}-${field.field_type}`}><td>{field.field_label}<br /><span className="small">{field.field_type}{field.available_options.length ? `: ${field.available_options.join(", ")}` : ""}</span></td><td><select value={field.status} onChange={(event) => updateField(index, { status: event.target.value })}><option value="needs_user_input">Needs my input</option><option value="verified_autofill">Verified autofill</option><option value="proposed_for_review">Proposed for review</option><option value="not_applicable">Not applicable</option><option value="blocked">Blocked</option></select><input value={field.proposed_value ?? ""} onChange={(event) => updateField(index, { proposed_value: event.target.value || null })} placeholder="Proposed answer" /><span className="small">{field.reason}</span></td></tr>)}</tbody></table><div className="actions"><button className="secondary" disabled={working || !reviewHash} onClick={saveFieldReview}>Save field decisions</button><button className="secondary" disabled={working || !reviewHash || safeFields === 0} onClick={fillVerified}>Fill verified fields</button><button className="primary" disabled={working || unresolved > 0 || !reviewHash} onClick={approveSubmission}>Approve final application</button></div><p className="small">Review hash: <span className="mono">{reviewHash ?? "unsaved changes"}</span><br />Safe fill never uploads or submits.</p></>}</div>
       </>}
