@@ -10,6 +10,7 @@ export async function fillVerifiedFields(url: string, proposedFields: unknown[])
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "domcontentloaded" });
     const filled: string[] = [];
+    const verified: Array<{ label: string; value: string }> = [];
     for (const field of eligible) {
       const locator = page.getByLabel(field.field_label, { exact: false });
       const count = await locator.count();
@@ -18,9 +19,9 @@ export async function fillVerifiedFields(url: string, proposedFields: unknown[])
       if (tag === "select") await locator.selectOption({ label: field.proposed_value! });
       else await locator.fill(field.proposed_value!);
       const displayed = await locator.inputValue();
-      if (displayed === field.proposed_value) filled.push(field.field_label);
+      if (displayed === field.proposed_value) { filled.push(field.field_label); verified.push({ label: field.field_label, value: displayed }); }
     }
-    return { filled, skipped: fields.length - filled.length };
+    return { filled, verified, skipped: fields.length - filled.length };
   } finally {
     await browser.close();
   }

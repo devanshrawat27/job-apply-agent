@@ -57,7 +57,7 @@ export default function Home() {
   }
   async function fillVerified() {
     if (!resume || !formUrl) return; setWorking(true); setMessage("");
-    try { const result = await api<{ message: string; result: { filled: string[]; skipped: number } }>("/api/forms/fill", { applicationId: resume.applicationId, url: formUrl }); setMessage(`${result.message} Filled: ${result.result.filled.join(", ") || "none"}. Skipped: ${result.result.skipped}.`); }
+    try { const result = await api<{ message: string; reviewHash: string; result: { filled: string[]; verified: Array<{ label: string; value: string }>; skipped: number } }>("/api/forms/fill", { applicationId: resume.applicationId, url: formUrl }); setReviewHash(result.reviewHash); setFields((current) => current.map((field) => result.result.verified.some((item) => item.label === field.field_label) ? { ...field, status: "filled_verified", reason: "Browser value matched after filling." } : field)); setMessage(`${result.message} Verified: ${result.result.verified.map((item) => `${item.label}=${item.value}`).join(", ") || "none"}. Skipped: ${result.result.skipped}.`); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Safe fill failed."); } finally { setWorking(false); }
   }
   async function approveSubmission() {
