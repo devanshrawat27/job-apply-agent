@@ -94,3 +94,14 @@ export const FinalApprovalRequestSchema = z.object({
   reviewHash: z.string().min(1),
   approval: z.literal("APPROVE_SUBMISSION"),
 });
+
+export const ApplicationReviewSchema = z.object({
+  applicationId: z.string().min(1),
+  resumeHash: z.string().min(1),
+  fields: z.array(FieldRecordSchema),
+  coverLetter: z.string().default(""),
+  reviewHash: z.string().min(1),
+  createdAt: z.string(),
+});
+
+export type ApplicationReview = z.infer<typeof ApplicationReviewSchema>;

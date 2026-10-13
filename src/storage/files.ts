@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "crypto";
 import { mkdir, readFile, writeFile, copyFile, access } from "fs/promises";
 import path from "path";
-import { MasterProfileSchema, ResumeRecordSchema, type JobAnalysis, type MasterProfile } from "@/validation/schemas";
+import { ApplicationReviewSchema, MasterProfileSchema, ResumeRecordSchema, type ApplicationReview, type JobAnalysis, type MasterProfile } from "@/validation/schemas";
 
 export const projectRoot = process.cwd();
 export const dataRoot = path.join(projectRoot, "data");
@@ -65,6 +65,31 @@ export async function saveResumeRecord(record: ReturnType<typeof ResumeRecordSch
 export async function loadResumeRecord(applicationId: string) {
   const raw = await readFile(path.join(applicationRoot, applicationId, "resume-record.json"), "utf8");
   return ResumeRecordSchema.parse(JSON.parse(raw));
+}
+
+export async function saveApplicationReview(review: ApplicationReview) {
+  const directory = path.join(applicationRoot, review.applicationId);
+  await mkdir(directory, { recursive: true });
+  await writeFile(path.join(directory, "application-review.json"), JSON.stringify(review, null, 2), "utf8");
+  await writeFile(path.join(directory, "fields-detected.json"), JSON.stringify(review.fields, null, 2), "utf8");
+  await writeFile(path.join(directory, "status.json"), JSON.stringify({ status: "ready_for_review", reviewHash: review.reviewHash, resumeHash: review.resumeHash, updatedAt: new Date().toISOString() }, null, 2), "utf8");
+  return review;
+}
+
+export async function loadApplicationReview(applicationId: string) {
+  const raw = await readFile(path.join(applicationRoot, applicationId, "application-review.json"), "utf8");
+  return ApplicationReviewSchema.parse(JSON.parse(raw));
+}
+
+export async function approveFinalApplication(applicationId: string, reviewHash: string) {
+  const review = await loadApplicationReview(applicationId);
+  if (review.reviewHash !== reviewHash) throw new Error("The application review changed. Review the current version again.");
+  const unresolved = review.fields.filter((field) => ["needs_user_input", "proposed_for_review", "blocked"].includes(field.status));
+  if (unresolved.length) throw new Error(`Final approval is blocked: ${unresolved.length} field(s) still need review or user input.`);
+  const directory = path.join(applicationRoot, applicationId);
+  const status = { status: "ready_for_submission", reviewHash, resumeHash: review.resumeHash, finalApprovalAt: new Date().toISOString(), submitClickEnabled: false };
+  await writeFile(path.join(directory, "status.json"), JSON.stringify(status, null, 2), "utf8");
+  return status;
 }
 
 export async function approveResume(applicationId: string, contentHash: string) {
