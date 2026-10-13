@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "last_verified": "YYYY-MM-DD",
+  "identity": { "full_name": "Your Name", "email": "you@example.com", "phone": "+91...", "location": "City, Country", "links": [] },
+  "summary": "A truthful professional summary.",
+  "education": [],
+  "experience": [],
+  "projects": [],
+  "skills": [],
+  "preferences": {},
+  "conflicts": [],
+  "source_resumes": []
+}

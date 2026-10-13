@@ -17,6 +17,7 @@ async function api<T>(url: string, body?: unknown): Promise<T> {
 
 export default function Home() {
   const [profile, setProfile] = useState<ProfileStatus | null>(null);
+  const [profileJson, setProfileJson] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [description, setDescription] = useState("");
   const [job, setJob] = useState<Job | null>(null);
@@ -37,6 +38,11 @@ export default function Home() {
     setWorking(true); setMessage(""); setResume(null); setPreviewUrl(null); setFields([]);
     try { const result = await api<{ job: Job; warning: string | null }>("/api/jobs/analyze", { sourceUrl, description }); setJob(result.job); setMessage(result.warning ?? "Job analyzed locally."); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Analysis failed."); } finally { setWorking(false); }
+  }
+  async function importProfile() {
+    setWorking(true); setMessage("");
+    try { const result = await api<{ message: string }>("/api/profile/import", JSON.parse(profileJson)); setMessage(result.message); setProfileJson(""); await refreshProfile(); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Profile import failed. Check that the JSON is valid."); } finally { setWorking(false); }
   }
   async function generate() {
     if (!job) return; setWorking(true); setMessage("");
@@ -84,7 +90,7 @@ export default function Home() {
     <p className="subtle">Analyze a role, generate a truthful PDF draft, inspect an application form, fill only verified low-risk fields, and keep final submission separately gated.</p>
     {message && <p className={`notice ${message.toLowerCase().includes("blocked") || message.toLowerCase().includes("failed") ? "warning" : ""}`}>{message}</p>}
     <div className="grid"><section>
-      <div className="card"><h2>1. Profile Pack status</h2>{profile?.ready ? <div className="notice success"><strong>{profile.summary?.name}</strong> - verified {profile.summary?.lastVerified}. {profile.summary?.conflicts.length ? `Blocked by ${profile.summary.conflicts.length} unresolved conflict(s).` : "Ready for evidence-backed drafting."}</div> : <div className="notice warning">Profile Pack not installed. Job analysis works, but resume drafting stays blocked.</div>}<div className="actions"><button className="secondary" onClick={refreshProfile}>Recheck local profile</button></div></div>
+      <div className="card"><h2>1. Profile Pack status</h2>{profile?.ready ? <div className="notice success"><strong>{profile.summary?.name}</strong> - verified {profile.summary?.lastVerified}. {profile.summary?.conflicts.length ? `Blocked by ${profile.summary.conflicts.length} unresolved conflict(s).` : "Ready for evidence-backed drafting."}</div> : <div className="notice warning">Profile Pack not installed. Job analysis works, but resume drafting stays blocked.</div>}<div className="actions"><button className="secondary" onClick={refreshProfile}>Recheck local profile</button></div><details><summary>Import or replace local Profile Pack</summary><p className="small">Paste the JSON exported from your approved profile handoff. It is saved only to this project’s local data folder.</p><textarea value={profileJson} onChange={(event) => setProfileJson(event.target.value)} placeholder='{"schema_version":"1.0", ...}' /><div className="actions"><button className="secondary" disabled={working || !profileJson.trim()} onClick={importProfile}>Validate and save profile</button><a className="secondary" href="/profile-template.json" target="_blank" rel="noreferrer">Open template</a></div></details></div>
       <div className="card"><h2>2. Analyze a job</h2><label htmlFor="url">Job URL</label><input id="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://careers.example.com/jobs/..." /><label htmlFor="description">Job description</label><textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Paste the complete job description here..." /><div className="actions"><button className="primary" disabled={working || (!sourceUrl && !description)} onClick={analyze}>{working ? "Working…" : "Analyze job"}</button></div></div>
       {job && <div className="card"><h2>3. Job evidence review</h2><p><strong>{job.role ?? "Role not identified"}</strong>{job.company ? ` at ${job.company}` : ""}{job.location ? ` · ${job.location}` : ""}</p><table className="table"><thead><tr><th>Requirement</th><th>Evidence</th></tr></thead><tbody>{job.evidence.map((item) => <tr key={item.requirement}><td>{item.requirement}</td><td>{item.evidence.length ? item.evidence.join("; ") : <span className="small">Unknown - will not be claimed.</span>}</td></tr>)}</tbody></table><div className="actions"><button className="primary" disabled={working || !profile?.ready} onClick={generate}>Generate PDF draft</button></div></div>}
     </section><aside>

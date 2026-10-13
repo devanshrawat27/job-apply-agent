@@ -48,6 +48,13 @@ export async function loadProfile(): Promise<{ profile: MasterProfile | null; er
   }
 }
 
+export async function saveProfile(profile: MasterProfile) {
+  await ensureDataDirectories();
+  await writeFile(paths.masterProfile, JSON.stringify(MasterProfileSchema.parse(profile), null, 2), "utf8");
+  await writeFile(paths.masterProfileMarkdown, `# ${profile.identity.full_name}\n\n${profile.summary}\n\nLast verified: ${profile.last_verified}\n`, "utf8");
+  return profile;
+}
+
 export async function saveJobAnalysis(job: JobAnalysis) {
   const directory = path.join(applicationRoot, job.id);
   await mkdir(directory, { recursive: true });
