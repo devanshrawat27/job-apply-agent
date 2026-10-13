@@ -24,3 +24,11 @@ export async function closeManualSession() {
 export function currentSessionPage() {
   return page;
 }
+
+export async function uploadResumeFile(pdfPath: string) {
+  if (!page || page.isClosed()) throw new Error("Open the application URL in the manual browser session first.");
+  const fileInput = page.locator('input[type="file"]').first();
+  if (await fileInput.count() === 0) throw new Error("No resume file input was found on the current page.");
+  await fileInput.setInputFiles(pdfPath);
+  return { url: page.url(), fileName: path.basename(pdfPath) };
+}

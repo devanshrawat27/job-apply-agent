@@ -88,6 +88,12 @@ export const ApprovalRequestSchema = z.object({
   contentHash: z.string().min(1),
   approval: z.literal("APPROVE_RESUME"),
 });
+export const ResumeUploadRequestSchema = z.object({
+  applicationId: z.string().min(1),
+  url: z.string().url(),
+  resumeHash: z.string().min(1),
+  approval: z.literal("UPLOAD_APPROVED_RESUME"),
+});
 
 export const FinalApprovalRequestSchema = z.object({
   applicationId: z.string().min(1),
