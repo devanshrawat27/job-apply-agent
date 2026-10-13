@@ -87,6 +87,14 @@ export async function updateApplicationReview(applicationId: string, fields: App
   return saveApplicationReview({ ...current, fields, coverLetter, reviewHash: nextHash, createdAt: new Date().toISOString() });
 }
 
+export async function appendAuditEvent(applicationId: string, action: string, details: Record<string, unknown>) {
+  const directory = path.join(applicationRoot, applicationId);
+  await mkdir(directory, { recursive: true });
+  const auditPath = path.join(directory, "audit.jsonl");
+  const line = JSON.stringify({ action, details, createdAt: new Date().toISOString() }) + "\n";
+  await writeFile(auditPath, line, { encoding: "utf8", flag: "a" });
+}
+
 export async function approveFinalApplication(applicationId: string, reviewHash: string) {
   const review = await loadApplicationReview(applicationId);
   if (review.reviewHash !== reviewHash) throw new Error("The application review changed. Review the current version again.");
