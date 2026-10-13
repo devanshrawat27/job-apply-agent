@@ -50,6 +50,7 @@ yarn-error.log*
 !/data/applications/.gitkeep
 /data/agent.sqlite
 /playwright-profile/
+/job-application-agent-release.zip
 
 # User-supplied profile handoff files kept at the workspace root during import
 /MASTER_PROFILE.md

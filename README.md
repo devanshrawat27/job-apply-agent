@@ -24,6 +24,8 @@ The current UI implements Phase 0 and the first usable profile-to-PDF/form revie
 
 On Windows, double-click `start-agent.bat` for the same setup/start flow. To initialize the optional local Prisma tracker database, run `npm run db:setup` once.
 
+To create a clean source bundle without personal profile/application data, run `powershell -ExecutionPolicy Bypass -File .\package-release.ps1`. The generated ZIP intentionally excludes `data/`, `playwright-profile/`, `.env.local`, and `node_modules/`.
+
 Run `npm test`, `npm run lint`, and `npx tsc --noEmit` before changes are considered verified.
 
 ## One-time Profile Pack handoff
