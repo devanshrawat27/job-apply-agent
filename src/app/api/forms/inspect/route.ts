@@ -12,11 +12,12 @@ export async function POST(request: Request) {
     const parsed = new URL(url);
     if (!/^https?:$/.test(parsed.protocol)) throw new Error("Provide an http(s) application URL.");
     const { profile } = await loadProfile();
-    const fields = classifyFields(await inspectApplicationForm(parsed.toString()), profile);
-    if (!applicationId || !resumeHash) return NextResponse.json({ fields, notice: "Inspection only: no values, files, uploads, or submit actions were performed." });
+    const inspection = await inspectApplicationForm(parsed.toString());
+    const fields = classifyFields(inspection.fields, profile);
+    if (!applicationId || !resumeHash) return NextResponse.json({ fields, adapter: inspection.adapter, notice: "Inspection only: no values, files, uploads, or submit actions were performed." });
     const reviewHash = createHash("sha256").update(JSON.stringify({ applicationId, resumeHash, fields })).digest("hex");
     const review = await saveApplicationReview({ applicationId, resumeHash, fields: fields.map((field) => FieldRecordSchema.parse(field)), coverLetter: "", reviewHash, createdAt: new Date().toISOString() });
-    return NextResponse.json({ fields, review, notice: "Inspection only: no values, files, uploads, or submit actions were performed." });
+    return NextResponse.json({ fields, adapter: inspection.adapter, review, notice: "Inspection only: no values, files, uploads, or submit actions were performed." });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to inspect the form." }, { status: 400 });
   }

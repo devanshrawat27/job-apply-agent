@@ -47,7 +47,7 @@ export default function Home() {
   }
   async function inspectForm() {
     if (!resume || !formUrl) return; setWorking(true); setMessage("");
-    try { const result = await api<{ fields: Field[]; review: { reviewHash: string } }>("/api/forms/inspect", { url: formUrl, applicationId: resume.applicationId, resumeHash: resume.contentHash }); setFields(result.fields); setReviewHash(result.review.reviewHash); setMessage("Form inspected. No values were entered."); }
+    try { const result = await api<{ fields: Field[]; adapter: { label: string; supported: boolean; notes: string }; review: { reviewHash: string } }>("/api/forms/inspect", { url: formUrl, applicationId: resume.applicationId, resumeHash: resume.contentHash }); setFields(result.fields); setReviewHash(result.review.reviewHash); setMessage(`Form inspected (${result.adapter.label}). ${result.adapter.notes} No values were entered.`); }
     catch (error) { setMessage(error instanceof Error ? error.message : "Form inspection failed."); } finally { setWorking(false); }
   }
   async function saveFieldReview() {
