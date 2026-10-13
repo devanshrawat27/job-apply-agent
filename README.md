@@ -8,10 +8,10 @@ A local-only, review-first Windows application for preparing truthful job applic
 - Job URL or pasted-description analysis with a conservative requirements-to-verified-evidence table.
 - ATS-friendly single-column HTML resume source rendered to an actual PDF through Playwright Chromium.
 - In-app PDF preview, exact SHA-256 content hash, and `Approve this resume` version-specific approval.
-- Playwright form-control inspection plus a guarded low-risk fill helper. It has no upload or submit implementation.
+- Playwright form-control inspection, guarded low-risk fill, approval-gated resume upload, and an opt-in submit endpoint.
 - SQLite/Prisma schema for applications, approvals, and audit events; JSON files retain the local artifacts for the first milestone.
 
-The current UI implements Phase 0 and the first usable profile-to-PDF review flow. Full form workflow, final review screen, browser upload, confirmation verification, and final submission are intentionally not enabled yet.
+The current UI implements Phase 0 and the first usable profile-to-PDF/form review flow. Submit clicks remain disabled by default and require `ALLOW_BROWSER_SUBMIT=true`, current final approval, and a single accessible Submit button.
 
 ## Start locally
 

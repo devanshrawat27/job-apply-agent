@@ -32,3 +32,12 @@ export async function uploadResumeFile(pdfPath: string) {
   await fileInput.setInputFiles(pdfPath);
   return { url: page.url(), fileName: path.basename(pdfPath) };
 }
+
+export async function clickSubmitAfterReview() {
+  if (!page || page.isClosed()) throw new Error("Open the application URL in the manual browser session first.");
+  const buttons = page.getByRole("button", { name: /submit application|submit/i });
+  const count = await buttons.count();
+  if (count !== 1) throw new Error(`Expected exactly one accessible Submit button, found ${count}. Review and submit manually.`);
+  await buttons.click();
+  return { url: page.url(), title: await page.title().catch(() => "") };
+}

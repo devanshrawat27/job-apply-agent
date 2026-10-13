@@ -18,5 +18,5 @@ export async function assertFinalSubmissionAllowed(applicationId: string, review
   return status;
 }
 
-/** Deliberately does not click Submit. Browser submission is enabled only after the gate above passes. */
-export const browserSubmissionPolicy = { allowsSubmitClick: false } as const;
+/** Disabled by default. Enable only for a deliberate local test/session with ALLOW_BROWSER_SUBMIT=true. */
+export const browserSubmissionPolicy = { allowsSubmitClick: process.env.ALLOW_BROWSER_SUBMIT === "true" } as const;

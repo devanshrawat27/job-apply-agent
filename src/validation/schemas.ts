@@ -100,6 +100,12 @@ export const FinalApprovalRequestSchema = z.object({
   reviewHash: z.string().min(1),
   approval: z.literal("APPROVE_SUBMISSION"),
 });
+export const SubmitApplicationRequestSchema = z.object({
+  applicationId: z.string().min(1),
+  url: z.string().url(),
+  reviewHash: z.string().min(1),
+  confirmation: z.literal("SUBMIT_AFTER_FINAL_APPROVAL"),
+});
 
 export const ApplicationReviewSchema = z.object({
   applicationId: z.string().min(1),
