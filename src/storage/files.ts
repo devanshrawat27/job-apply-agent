@@ -13,6 +13,8 @@ export const approvedRoot = path.join(dataRoot, "resumes", "approved");
 export const paths = {
   masterProfile: path.join(profileRoot, "master-profile.json"),
   masterProfileMarkdown: path.join(profileRoot, "MASTER_PROFILE.md"),
+  sourceProfile: path.join(profileRoot, "master-profile-source.json"),
+  sourceProfileMarkdown: path.join(profileRoot, "MASTER_PROFILE_SOURCE.md"),
 };
 
 export function hash(value: string | Buffer) {
@@ -48,10 +50,11 @@ export async function loadProfile(): Promise<{ profile: MasterProfile | null; er
   }
 }
 
-export async function saveProfile(profile: MasterProfile) {
+export async function saveProfile(profile: MasterProfile, source?: { json: string; markdown?: string }) {
   await ensureDataDirectories();
   await writeFile(paths.masterProfile, JSON.stringify(MasterProfileSchema.parse(profile), null, 2), "utf8");
   await writeFile(paths.masterProfileMarkdown, `# ${profile.identity.full_name}\n\n${profile.summary}\n\nLast verified: ${profile.last_verified}\n`, "utf8");
+  if (source) { await writeFile(paths.sourceProfile, source.json, "utf8"); if (source.markdown) await writeFile(paths.sourceProfileMarkdown, source.markdown, "utf8"); }
   return profile;
 }
 

@@ -37,6 +37,8 @@ yarn-error.log*
 # Local-only career and application records
 /data/profile/MASTER_PROFILE.md
 /data/profile/master-profile.json
+/data/profile/MASTER_PROFILE_SOURCE.md
+/data/profile/master-profile-source.json
 /data/profile/resumes/original/*
 !/data/profile/resumes/original/.gitkeep
 /data/resumes/drafts/*
@@ -47,6 +49,10 @@ yarn-error.log*
 !/data/applications/.gitkeep
 /data/agent.sqlite
 /playwright-profile/
+
+# User-supplied profile handoff files kept at the workspace root during import
+/MASTER_PROFILE.md
+/master-profile.json
 
 # vercel
 .vercel
